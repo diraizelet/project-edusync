@@ -102,13 +102,34 @@ const CreateAssessmentForm: React.FC<CreateAssessmentFormProps> = ({ onClose }) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+  
     if (!validate()) return;
-    
+  
     setIsSubmitting(true);
-    
+  
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = {
+        id: crypto.randomUUID(),
+        title,
+        description: "Assessment description",
+        course_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", // Replace with actual course_id if dynamic
+        questions: "Default questions text",
+        time_limit: 60, // in minutes
+        pass_score: 40,
+      };
+  
+      const response = await fetch('https://localhost:7130/api/Assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
       setIsSuccess(true);
       setTimeout(() => {
         onClose();
@@ -119,6 +140,7 @@ const CreateAssessmentForm: React.FC<CreateAssessmentFormProps> = ({ onClose }) 
       setIsSubmitting(false);
     }
   };
+  
 
   return (
     <div className="p-6">

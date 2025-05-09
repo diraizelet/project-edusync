@@ -12,8 +12,15 @@ type Course = {
 
 type Assessment = {
   id: string;
-  name: string;
-  courseTitle: string;
+  title: string;
+  description: string;
+  course_id: string;
+  // You can map course_id to course title later if needed
+  questions: string;
+  time_limit: number;
+  pass_score: number;
+  created_at: string;
+  updated_at: string;
 };
 
 const InstructorDashboard: React.FC = () => {
@@ -26,8 +33,7 @@ const InstructorDashboard: React.FC = () => {
     try {
       const res = await fetch('https://localhost:7130/api/courses');
       const data = await res.json();
-      console.log("pulled data");
-      
+      console.log('pulled data');
       setCourses(data);
     } catch (err) {
       console.error('Failed to fetch courses:', err);
@@ -121,10 +127,13 @@ const InstructorDashboard: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">My Assessments</h2>
                 <div className="space-y-4">
                   {assessments.length > 0 ? (
-                    assessments.map((a) => (
-                      <div key={a.id} className="p-4 border rounded-md">
-                        <h3 className="text-md font-semibold">{a.name}</h3>
-                        <p className="text-sm text-gray-600">Course: {a.courseTitle}</p>
+                    assessments.map((assessment) => (
+                      <div key={assessment.id} className="p-4 border rounded-md">
+                        <h3 className="text-md font-semibold">{assessment.title}</h3>
+                        <p className="text-sm text-gray-600">{assessment.description}</p>
+                        <p className="text-sm text-gray-600">Course ID: {assessment.course_id}</p>
+                        <p className="text-sm text-gray-600">Time Limit: {assessment.time_limit} minutes</p>
+                        <p className="text-sm text-gray-600">Pass Score: {assessment.pass_score}%</p>
                       </div>
                     ))
                   ) : (
