@@ -40,7 +40,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       localStorage.setItem('token', token);
 
-      if (userData.role.toLowerCase() !== role) {
+      // Ensure role is correct
+      const userRole = userData.role.toLowerCase() as UserRole;
+
+      // Check if the role matches the one selected
+      if (userRole !== role) {
         setError('Incorrect role selected');
         return false;
       }
@@ -49,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id: userData.id,
         name: userData.name,
         email: userData.email,
-        role: userData.role.toLowerCase()
+        role: userRole
       });
 
       return true;
@@ -62,47 +66,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signup = async (
-  name: string,
-  email: string,
-  password: string,
-  _role: UserRole
-): Promise<boolean> => {
-  setIsLoading(true);
-  setError(null);
+    name: string,
+    email: string,
+    password: string,
+    role: UserRole
+  ): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
 
-  try {
-    const payload = {
-      userId: crypto.randomUUID(),
-      name,
-      email,
-      passwordHash: password,
-      role: "INSTRUCTOR"
-    };
+    try {
+      const payload = {
+        userId: crypto.randomUUID(),
+        name,
+        email,
+        passwordHash: password,
+        role: role.toUpperCase()  // Ensure the role is in uppercase when sending to the API
+      };
 
-    const response = await axios.post(`https://localhost:7130/api/Users/signup`, payload);
-    const { token, user: userData } = response.data;
+      const response = await axios.post(`https://localhost:7130/api/Users/signup`, payload);
+      const { token, user: userData } = response.data;
 
-    localStorage.setItem('token', token);
+      localStorage.setItem('token', token);
 
-    // Ensure role is lowercase and matches expected types
-    const userRole = userData.role.toLowerCase() as UserRole;
+      // Ensure role is lowercase and matches expected types
+      const userRole = userData.role.toLowerCase() as UserRole;
 
-    setUser({
-      id: userData.id,
-      name: userData.name,
-      email: userData.email,
-      role: userRole
-    });
+      setUser({
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userRole
+      });
 
-    return true;
-  } catch (err: any) {
-    setError(err.response?.data?.message || err.response?.data || 'Signup failed');
-    return false;
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      return true;
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.response?.data || 'Signup failed');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const logout = () => {
     setUser(null);
