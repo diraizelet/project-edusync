@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import axios from 'axios';
 
 export type UserRole = 'student' | 'instructor';
 
@@ -25,73 +26,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulate login - in a real app, this would call an API
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, any non-empty email/password works
-      if (email && password) {
-        setUser({
-          id: `user-${Date.now()}`,
-          name: email.split('@')[0],
-          email,
-          role
-        });
-        return true;
-      } else {
-        setError('Invalid email or password');
+      const response = await axios.post(`https://localhost:7130/api/Users/login`, {
+        email,
+        password
+      });
+
+      const { token, user: userData } = response.data;
+
+      localStorage.setItem('token', token);
+
+      if (userData.role.toLowerCase() !== role) {
+        setError('Incorrect role selected');
         return false;
       }
-    } catch (err) {
-      setError('An error occurred during login');
+
+      setUser({
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role.toLowerCase()
+      });
+
+      return true;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed');
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Simulate signup - in a real app, this would call an API
   const signup = async (
-    name: string, 
-    email: string, 
-    password: string, 
-    role: UserRole
-  ): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, always succeed with valid inputs
-      if (name && email && password) {
-        setUser({
-          id: `user-${Date.now()}`,
-          name,
-          email,
-          role
-        });
-        return true;
-      } else {
-        setError('Please fill out all fields');
-        return false;
-      }
-    } catch (err) {
-      setError('An error occurred during signup');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  name: string,
+  email: string,
+  password: string,
+  _role: UserRole
+): Promise<boolean> => {
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    const payload = {
+      userId: crypto.randomUUID(),
+      name,
+      email,
+      passwordHash: password,
+      role: "INSTRUCTOR"
+    };
+
+    const response = await axios.post(`https://localhost:7130/api/Users/signup`, payload);
+    const { token, user: userData } = response.data;
+
+    localStorage.setItem('token', token);
+
+    // Ensure role is lowercase and matches expected types
+    const userRole = userData.role.toLowerCase() as UserRole;
+
+    setUser({
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: userRole
+    });
+
+    return true;
+  } catch (err: any) {
+    setError(err.response?.data?.message || err.response?.data || 'Signup failed');
+    return false;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('token');
   };
 
   const value = {
