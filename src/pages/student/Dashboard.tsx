@@ -35,6 +35,7 @@ const StudentDashboard = () => {
     assessmentsCompleted: 48,
     averageScore: 85,
   };
+  
   interface Course {
     id: string;
     title: string;
@@ -42,22 +43,24 @@ const StudentDashboard = () => {
     totalLessons: number;
     completedLessons: number;
   }
-  
 
   useEffect(() => {
     const fetchAssessments = async () => {
       try {
         const response = await axios.get<Assessment[]>('https://localhost:7130/api/Assessments');
-        setAssessments(response.data);
+        const assessmentsWithAvailableStatus = response.data.map(assessment => ({
+          ...assessment,
+          status: 'available' as 'available', // Force setting all statuses to "available"
+        }));
+        setAssessments(assessmentsWithAvailableStatus);
       } catch (error) {
         console.error('Failed to fetch assessments:', error);
       }
     };
-  
+
     const fetchCourses = async () => {
       try {
         const response = await axios.get<Course[]>('https://localhost:7130/api/Courses');
-        // Optionally calculate progress if it's not in the DB
         const enrichedCourses = response.data.map(course => ({
           ...course,
           progress: Math.round((course.completedLessons / course.totalLessons) * 100),
@@ -67,28 +70,14 @@ const StudentDashboard = () => {
         console.error('Failed to fetch courses:', error);
       }
     };
-  
+
     fetchAssessments();
     fetchCourses();
   }, []);
-  
 
   const handleStartAssessment = (id: string) => {
     navigate(`/student/quiz/${id}`);
   };
-
-  useEffect(() => {
-    const fetchAssessments = async () => {
-      try {
-        const response = await axios.get<Assessment[]>('https://localhost:7130/api/Assessments');
-        setAssessments(response.data);
-      } catch (error) {
-        console.error('Failed to fetch assessments:', error);
-      }
-    };
-
-    fetchAssessments();
-  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -201,7 +190,7 @@ const StudentDashboard = () => {
                       )}
                     </div>
                   </div>
-                  {assessment.status === 'available' ? (
+                  {assessment.status === 'available' && (
                     <Button
                       size="sm"
                       onClick={() => handleStartAssessment(assessment.id)}
@@ -210,12 +199,13 @@ const StudentDashboard = () => {
                       <Play className="h-4 w-4" />
                       Start Now
                     </Button>
-                  ) : (
-                    assessment.score !== undefined && (
-                      <span className={`font-medium ${assessment.score >= 70 ? 'text-green-600' : 'text-red-600'}`}>
-                        {assessment.score}%
-                      </span>
-                    )
+                  )}
+                  {assessment.status !== 'available' && assessment.score !== undefined && (
+                    <span
+                      className={`font-medium ${assessment.score >= 70 ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                      {assessment.score}%
+                    </span>
                   )}
                 </div>
               </div>

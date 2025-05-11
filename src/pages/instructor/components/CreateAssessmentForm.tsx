@@ -101,45 +101,65 @@ const CreateAssessmentForm: React.FC<CreateAssessmentFormProps> = ({ onClose }) 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-  
-    if (!validate()) return;
-  
-    setIsSubmitting(true);
-  
-    try {
-      const payload = {
-        id: crypto.randomUUID(),
-        title,
-        description: "Assessment description",
-        course_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", // Replace with actual course_id if dynamic
-        questions: "Default questions text",
-        time_limit: 60, // in minutes
-        pass_score: 40,
-      };
-  
-      const response = await fetch('https://localhost:7130/api/Assessments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-  
-      setIsSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-    } catch (error) {
-      console.error('Error creating assessment:', error);
-    } finally {
-      setIsSubmitting(false);
+  e.preventDefault();
+
+  if (!validate()) return;
+
+  setIsSubmitting(true);
+
+  try {
+    // Step 1: Upload file to backend
+    const formData = new FormData();
+    if (file) {
+      formData.append('file', file);
     }
-  };
+
+    const fileUploadRes = await fetch('https://localhost:7130/api/FileUpload/course-assessment', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!fileUploadRes.ok) {
+      throw new Error(`File upload failed: ${fileUploadRes.statusText}`);
+    }
+
+    const uploadedFileUrl = await fileUploadRes.text(); // Or JSON if you return it that way
+
+    // Step 2: Send assessment metadata
+    const payload = {
+      id: crypto.randomUUID(),
+      title,
+      description: "Assessment description",
+      course_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      questions: "Default questions text",
+      time_limit: 60,
+      pass_score: 40,
+      fileUrl: uploadedFileUrl // <-- Save the blob URL in DB if needed
+    };
+
+    const response = await fetch('https://localhost:7130/api/Assessments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    setIsSuccess(true);
+    setTimeout(() => {
+      onClose();
+    }, 1500);
+  } catch (error) {
+    console.error('Error creating assessment:', error);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
   
 
   return (
