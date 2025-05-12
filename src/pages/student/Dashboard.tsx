@@ -29,13 +29,14 @@ const StudentDashboard = () => {
 
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [averageScore, setAverageScore] = useState<number>(0);
 
   const stats = {
     coursesCompleted: 12,
     assessmentsCompleted: 48,
-    averageScore: 85,
+    averageScore,
   };
-  
+
   interface Course {
     id: string;
     title: string;
@@ -71,9 +72,21 @@ const StudentDashboard = () => {
       }
     };
 
+    const fetchAverageScore = async () => {
+      try {
+        if (user?.id) {
+          const response = await axios.get<number>(`https://localhost:7130/api/Results/average/${user.id}`);
+          setAverageScore(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch average score:', error);
+      }
+    };
+
     fetchAssessments();
     fetchCourses();
-  }, []);
+    fetchAverageScore();
+  }, [user?.id]);
 
   const handleStartAssessment = (id: string) => {
     navigate(`/student/quiz/${id}`);

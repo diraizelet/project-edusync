@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Clock, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
 import Button from '../../components/ui/Button';
-
+import axios from 'axios';
 interface Question {
   id: number;
   question: string;
@@ -77,9 +77,28 @@ const Quiz = () => {
     return Math.round((correct / quizData.questions.length) * 100);
   };
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+  setIsSubmitted(true);
+
+  const resultPayload = {
+    userId: 'user123', // Replace with actual user ID from context or auth
+    quizId: id, // From useParams
+    submittedAt: new Date().toISOString(),
+    score: calculateScore(),
+    answers: selectedAnswers.map((answer, index) => ({
+      questionId: quizData.questions[index].id,
+      selectedOption: answer,
+    })),
   };
+
+  try {
+    const response = await axios.post('https://localhost:7130/api/Results', resultPayload);
+    console.log('Result submitted and saved:', response.data);
+    // You can optionally use response.data.score to show updated score if backend modifies it
+  } catch (error) {
+    console.error('Failed to submit quiz result', error);
+  }
+};
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
