@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 
 export type UserRole = 'student' | 'instructor';
@@ -25,6 +25,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load user from localStorage if token exists
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Attempt to decode and restore the user info from a previously saved token
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get('https://localhost:7130/api/Users/me', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+
+          const userData = response.data;
+
+          setUser({
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role.toLowerCase() as UserRole
+          });
+        } catch (err) {
+          console.error('Error fetching user data from token:', err);
+        }
+      };
+
+      fetchUserData();
+    }
+  }, []);
 
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
     setIsLoading(true);
